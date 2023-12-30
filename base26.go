@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -32,27 +33,37 @@ func indexOf(char byte) int {
 
 func main() {
 	flag.Parse()
-	bytes, _ := ioutil.ReadAll(os.Stdin)
 	if *decodeFlag {
+		bytes, _ := ioutil.ReadAll(os.Stdin)
 		s := strings.ReplaceAll(string(bytes), "\n", "")
+		var result []byte
 		for i := 0; i < len(s); i += 2 {
-			fmt.Printf("%c", decode(s[i:i+2]))
+			result = append(result, decode(s[i:i+2]))
 		}
-		fmt.Println()
+		fmt.Printf("%s\n", string(result))
 	} else {
+		reader := bufio.NewReader(os.Stdin)
 		var line string
-		for _, b := range bytes {
-			line += encode(b)
-			if *lineLength != -1 && len(line) >= *lineLength {
-				fmt.Println(line)
-				line = ""
+		for {
+			r, _, err := reader.ReadRune()
+			if err != nil {
+				break
+			}
+			for _, b := range []byte(string(r)) {
+				line += encode(b)
 			}
 		}
-		if len(line) > 0 {
-			fmt.Print(line)
-		}
-		if *lineLength != -1 || len(line) > 0 {
-			fmt.Println()
+		if *lineLength != -1 {
+			for i := 0; i < len(line); i += *lineLength {
+				end := i + *lineLength
+				if end > len(line) {
+					end = len(line)
+				}
+				fmt.Println(line[i:end])
+			}
+		} else {
+			fmt.Println(line)
 		}
 	}
 }
+
